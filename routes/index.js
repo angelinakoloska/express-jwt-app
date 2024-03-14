@@ -1,9 +1,10 @@
 var express = require('express');
+require('dotenv').config();
 var router = express.Router();
-require('dotenv').config()
-var jwt = require('jsonwebtoken')
-
-const users = [];
+var jwt = require('jsonwebtoken');
+var db = require("../models");
+var UserService = require("../services/UserService");
+var userService = new UserService(db);
 let id = 1;
 
 router.get('/', function(req, res, next) {
@@ -23,12 +24,12 @@ router.post("/login", async (req, res, next) => {
   let { email, password } = req.body;
   let existingUser;
   try {
-    existingUser = users.find(element => element.email == email);
+    existingUser = await userService.getOneByEmail(email);
   } catch {
     const error = new Error("Error! Something went wrong.");
     return next(error);
   }
-  if (!existingUser || existingUser.password != password) {
+  if (!existingUser || existingUser.Password != password) {
     const error = Error("Wrong details please check at once");
     return next(error);
   }
@@ -62,7 +63,8 @@ router.post("/signup", async (req, res, next) => {
     email,
     password,
   };
-  users.push(newUser);
+  await userService.create(email, password);
+  // users.push(newUser);
   id++;
   let token;
   try {
